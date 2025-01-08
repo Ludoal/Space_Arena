@@ -1,0 +1,74 @@
+
+-- MODULES
+
+local h = require("modules.hashes")
+
+-- DATA
+
+local asteroids = require("modules.data_asteroids")
+
+-- PROPERTIES
+
+go.property("type", 0) -- access by arena.script
+go.property("animate", false) -- access by arena.script
+
+-- CALLBACKS
+
+function init(self)
+	
+	-- vars
+	local type = "a" .. self.type
+	self.size = asteroids[type]["size"]
+	self.hp = self.size
+	self.mass = asteroids[type]["mass"]
+	physics.update_mass("#co", self.mass)
+	self.next = asteroids[type]["next"]
+
+	--animation
+	local angle = math.random(0, 200) * math.pi / 100
+	go.set_rotation(vmath.quat_rotation_z(angle))
+	local force = math.random(10, 20) * 10000 / self.size
+	local x, y = math.random(-1, 1), math.random(-1, 1)
+	msg.post("#co", "apply_force", { force = vmath.vector3(x, y, 0) * force, position = go.get_position() })
+	local angular_velocity = vmath.vector3(0, 0 , math.random(1, 10) / 10 / self.size)
+	go.set("#co", "angular_velocity", angular_velocity)
+	local scale = vmath.vector3(0.1, 0.1, 0.1)
+	if self.animate then
+		go.animate(".", "scale", go.PLAYBACK_ONCE_BACKWARD, scale, go.EASING_LINEAR, 2)
+	end
+
+	-- hit timer
+	self.hit_timer = false
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.BULLET_HIT then
+		local score_update = 0
+		if self.hp > 1 then
+			local animation = self.size - self.hp + 2
+			sprite.play_flipbook("#sprite", "a" .. self.type .. "-" .. animation)
+			self.hp = self.hp - 1
+		elseif not self.hit_timer then
+			go.delete()
+			go.set_position(go.get_position(), "effects")
+			particlefx.play("effects#break")
+			if self.next then
+				for _, type in pairs(self.next) do
+					factory.create("factories#asteroid" .. type, go.get_position(), nil, { type = type })
+				end
+				score_update = 1
+			else
+				score_update = 2
+			end
+			self.hit_timer = true
+			timer.delay(0.1, false, function()
+				self.hit_timer = false
+			end)
+		end
+		msg.post("controller", h.UPDATE_SCORE, { score_update = score_update })
+	end
+	
+end

@@ -1,0 +1,8 @@
+
+-- CALLBACKS
+
+function init(self)
+	
+	go.set_parent(".", "layer_1")
+	
+end

@@ -1,0 +1,73 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+local u = require("modules.utils")
+
+-- FUNCTIONS
+
+local function draw_line(from, to)
+	
+	msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = vmath.vector4(1,0,0,1) })
+	
+end
+
+
+local function enemy_path()
+
+	return u.random_in_circle(c.ARENA_SIZE, 1000, 200)
+
+end
+
+-- CALLBACKS
+
+function init(self)
+
+	self.speed = 200
+	self.auto = true
+	self.state = "wander"
+	self.target = enemy_path()
+	
+end
+
+
+function update(self, dt)
+
+	if self.target then
+		local from = go.get_position()
+		local to = self.target
+		local result = physics.raycast(from, to, { hash("asteroids") } )
+		if result then
+			self.aim = result.position - vmath.normalize(result.position - from) * 100
+			if c.DEBUG then
+				draw_line(from, self.aim)
+			end
+		else
+			self.aim = to
+			if c.DEBUG then
+				draw_line(from, to)
+			end
+		end
+		local dir = vmath.normalize(self.aim - from)
+		local dist = vmath.length(self.aim - from)
+		local new_pos = from + dir * math.min(vmath.lerp(0.9, self.speed, dist), self.speed) * dt
+		go.set_position(new_pos)
+		if dist < 50 then
+			self.target = nil
+		end
+	elseif self.state == "wander" then
+		self.target = enemy_path()
+	end
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.ENEMY_TARGET then
+		self.auto = message.target and true or false
+		self.target = message.target
+	end
+	
+end

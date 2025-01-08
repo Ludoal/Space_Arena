@@ -1,0 +1,49 @@
+
+-- MODULES
+
+local h = require("modules.hashes")
+
+-- PROPERTIES
+
+go.property("type", 0) -- access by arena.script
+
+-- CONSTANTS
+
+local POWERUPS = {
+	{ name = "ammo", tint = vmath.vector4(0, 0, 1, 1) },
+	{ name = "life", tint = vmath.vector4(1, 0, 0, 1) },
+	{ name = "gun", tint = vmath.vector4(1, 1, 0, 1) }
+}
+
+-- CALLBACKS
+
+function init(self)
+
+	self.name = POWERUPS[self.type].name
+	self.tint = POWERUPS[self.type].tint
+
+	sprite.play_flipbook("#sprite", self.name)
+	sprite.set_constant("#sprite", "tint", self.tint)
+
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.TRIGGER_RESPONSE then
+		local position = go.get_position()
+		position.z = 1
+		go.set_position(position)
+		go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(2, 2, 2), go.EASING_LINEAR, 0.5, 0, function()
+			go.delete()
+		end)
+		if self.type == 1 then
+			msg.post("ship", h.ADD_AMMO)
+		elseif self.type == 2 then
+			msg.post("ship", h.ADD_LIFE)
+		elseif self.type == 3 then
+			msg.post("ship", h.ADD_GUN)
+		end
+	end
+	
+end

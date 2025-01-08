@@ -1,0 +1,21 @@
+TODO
+
+- propriétés différentes en fonction damper ou non
+- utiliser format pour les affichages
+- améliorer rebond ship
+- timer tir
+
+
+TREE
+- MODULES
+- DATA
+- PROPERTIES
+- CONSTANTS
+- VARIABLES
+- FUNCTIONS
+- CALLBACKS
+-- init
+-- final
+-- update (or fixed_update)
+-- on_message
+-- on_input

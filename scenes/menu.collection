@@ -1,0 +1,10 @@
+name: "_menu"
+scale_along_z: 0
+embedded_instances {
+  id: "interface"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/interface/menu.gui\"\n"
+  "}\n"
+  ""
+}

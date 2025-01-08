@@ -1,0 +1,30 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+
+-- CALLBACKS
+
+function init(self)
+
+	-- animation
+	local position = go.get_position()
+	local rotation = go.get_rotation()
+	local duration = c.BULLET_DISTANCE / c.BULLET_SPEED
+	local to = position + vmath.rotate(rotation, vmath.vector3(0, c.BULLET_DISTANCE, 0))
+	go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, to, go.EASING_LINEAR, duration, 0, function()
+		go.delete()
+	end)
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.COLLISION_RESPONSE then
+		go.delete()
+		msg.post(message.other_id, h.BULLET_HIT, { position = go.get_position() })
+	end
+	
+end

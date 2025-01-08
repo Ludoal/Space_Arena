@@ -1,0 +1,31 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+
+-- CALLBACKS
+
+function init(self)
+
+	local scale = vmath.vector3(1.1, 1.1, 1.1)
+	go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG, scale, go.EASING_INOUTQUAD, 2)
+	
+end
+
+
+function update(self, dt)
+	
+	if go.exists("ship") then
+		local ship_distance = vmath.length(go.get_position("ship") - go.get_position())
+		local relative_speed = vmath.project(go.get("ship#ship", "velocity"), vmath.normalize(go.get_position()))
+		local radius = 120 + c.FIELD_RADIUS * relative_speed / 10 -- need to compute sprite width
+		if ship_distance < radius and relative_speed > 0 then
+			local d = ship_distance / radius
+			local power = vmath.lerp(vmath.clamp(1 - d * d * d, 0, 1), c.FIELD_POWER, 0)
+			local force = vmath.rotate(go.get_rotation(), vmath.vector3(0, power, 0))
+			msg.post("ship", h.FIELD_FORCE, { force = force })
+		end
+	end
+	
+end

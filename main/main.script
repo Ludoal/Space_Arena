@@ -1,0 +1,69 @@
+
+-- https://defold.com/examples/collection/proxy/
+
+-- MODULES
+
+local h = require("modules.hashes")
+
+-- FUNCTIONS
+
+local function show(self, proxy)
+	
+	if self.current_proxy then
+		msg.post(self.current_proxy, "unload")
+		self.current_proxy = nil
+	end
+	msg.post(proxy, "async_load")
+	
+end
+
+-- CALLBACKS
+
+function init(self)
+	
+	msg.post(".", "acquire_input_focus")
+
+	self.current_proxy = nil
+	self.boot = h.SHOW_ARENA -- h.SHOW_MENU
+	msg.post("#", self.boot)
+	
+end
+
+
+function final(self)
+	
+	msg.post(".", "release_input_focus")
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+
+	if message_id == h.SHOW_MENU then
+		show(self, "#menu")
+	elseif message_id == h.SHOW_ARENA then
+		show(self, "#arena")
+
+	-- proxy status
+	elseif message_id == h.PROXY_LOADED then
+		self.current_proxy = sender
+		print("proxy_loaded", sender)
+		msg.post(sender, "enable")
+	elseif message_id == h.PROXY_UNLOADED then
+		print("proxy_unloaded", sender)
+
+	-- exit
+	elseif message_id == h.QUIT then
+		sys.exit(0)
+	end
+	
+end
+
+
+function on_input(self, action_id, action)
+	
+	if action_id == h.ESCAPE and action.pressed then
+		msg.post("#", h.SHOW_MENU)
+	end
+	
+end

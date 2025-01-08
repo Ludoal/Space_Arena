@@ -1,0 +1,25 @@
+images {
+  image: "/assets/images/celestial/planet-01.png"
+}
+images {
+  image: "/assets/images/celestial/planet-02.png"
+}
+images {
+  image: "/assets/images/celestial/planet-03.png"
+}
+images {
+  image: "/assets/images/celestial/satellite-01.png"
+}
+images {
+  image: "/assets/images/celestial/satellite-02.png"
+}
+images {
+  image: "/assets/images/celestial/sun-01.png"
+}
+images {
+  image: "/assets/images/celestial/dot_soft_128.png"
+}
+images {
+  image: "/assets/images/celestial/planet-earth.png"
+}
+extrude_borders: 2

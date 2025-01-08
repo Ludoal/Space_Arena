@@ -1,0 +1,143 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+local u = require("modules.utils")
+
+-- PROPERTIES
+
+go.property("windowWidth", 0) -- access by target.script
+go.property("windowHeight", 0) -- access by target.script
+
+-- FUNCTIONS
+
+local function layer_position(layer, position, factor)
+	
+	local layer_pos = go.get_position(layer)
+	local new_pos = vmath.vector3(position.x / factor, position.y / factor, layer_pos.z)
+	go.set_position(vmath.lerp(0.1, layer_pos, new_pos), layer)
+	
+end
+
+-- CALLBACKS
+
+function init(self)
+
+	-- game
+	self.windowWidth, self.windowHeight = window.get_size()
+
+	-- random seed
+	u.random_seed()
+
+	-- vars
+	self.frames = {}
+	self.fps = 0
+	self.score = 0
+
+	-- effects
+	msg.post("effects#explosion", "disable")
+
+	-- stars
+	local width = c.ARENA_SIZE * 1.2
+	for i = 1, c.STARS_COUNT do
+		local position = vmath.vector3(math.random(-width, width), math.random(-width, width), 0)
+		factory.create("factories#star", position)
+	end
+	
+	-- arena border
+	for i = 1, c.BORDER_SEGMENTS do
+		local a = i * math.pi * 2 / c.BORDER_SEGMENTS
+		local x, y = math.cos(a) * c.ARENA_SIZE, math.sin(a) * c.ARENA_SIZE
+		local position = vmath.vector3(x, y, 0)
+		local rotation = vmath.quat_rotation_z(math.rad(c.BORDER_ROTATION) + a)
+		factory.create("factories#border", position, rotation)
+	end
+
+	-- powerups
+	for i = 1, 3 do
+		local position = u.random_in_circle(c.ARENA_SIZE, 300, 200)
+		factory.create("factories#powerup", position, nil, { type = i })
+	end
+	
+	-- starting asteroids
+	for i = 1, 10 do
+		local position = u.random_in_circle(c.ARENA_SIZE, 200, 300)
+		local type = math.random(1, 2)
+		factory.create("factories#asteroid" .. type, position, nil, { type = type })
+	end
+
+	-- asteroid spawn
+	timer.delay(10, true, function()
+		local type = math.random(2, 5)
+		factory.create("factories#asteroid" .. type, vmath.vector3(0, 0, 0), nil, { type = type, animate = true })
+	end)
+
+	-- fps timer
+	timer.delay(0.1, true, function()
+		msg.post("interface#arena", h.UPDATE_FPS, { fps = self.fps })
+	end)
+
+	-- game timer
+	self.count = 0
+	timer.delay(1, true, function()
+		self.count = self.count + 1
+		local min = math.floor(self.count / 60)
+		local sec = self.count % 60
+		msg.post("interface#arena", h.GAME_TIME, { min = min, sec = sec })
+		if self.count == c.GAME_TIME then
+			go.delete("ship")
+			msg.post("interface#arena", h.TIME_UP)
+			timer.delay(5, false, function()
+				msg.post("main:/controller", h.SHOW_MENU)
+			end)
+		end
+	end)
+	
+	
+end
+
+
+function update(self, dt)
+
+	-- game
+	self.windowWidth, self.windowHeight = window.get_size()
+
+	-- fps
+	self.frames[#self.frames + 1] = socket.gettime()
+	if #self.frames == 61 then
+		table.remove(self.frames, 1)
+		self.fps = 1 / ((self.frames[#self.frames] - self.frames[1]) / (#self.frames - 1))
+	end
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+
+	-- background layers and camera
+	if message_id == h.UPDATE_LAYERS then
+		layer_position("layer_stars", message.position, 2)
+		layer_position("layer_1", message.position, 2.2)
+		layer_position("layer_2", message.position, 4)
+		layer_position("layer_3", message.position, 4.3)
+		msg.post("camera", h.UPDATE_CAMERA, { position = message.position })
+
+	-- update score
+	elseif message_id == h.UPDATE_SCORE then
+		self.score = self.score + message.score_update
+		msg.post("interface#arena", h.UPDATE_SCORE, { score = self.score })
+
+	-- death
+	elseif message_id == h.DEATH then
+		msg.post("effects#explosion", "enable")
+		sprite.play_flipbook("effects#explosion", "anim", function()
+			msg.post("effects#explosion", "disable")
+		end)
+		msg.post("interface#arena", h.GAME_OVER)
+		timer.delay(5, false, function()
+			msg.post("main:/controller", h.SHOW_MENU)
+		end)
+	end
+	
+end

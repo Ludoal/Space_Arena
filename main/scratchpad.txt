@@ -1,0 +1,21 @@
+
+-- display
+msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+local display_id = defos.get_current_display_id()
+local display_modes = defos.get_display_modes(display_id)
+local scaling_factor = display_modes[1].scaling_factor
+
+-- angle
+angle = (-angle % 360 + 360) % 360
+
+-- set target on circle
+if message_id == hash("update_target") then
+	msg.post("#sprite", "enable")
+	local arena_size = go.get("controller#_arena", "arena_size")
+	if vmath.length(message.position) > 0 then
+		local normalized = vmath.normalize(message.position)
+		local x, y = normalized.x * (arena_size - 100), normalized.y * (arena_size - 100)
+		local position = vmath.vector3(x, y, 0)
+		go.set_position(position)
+	end
+end

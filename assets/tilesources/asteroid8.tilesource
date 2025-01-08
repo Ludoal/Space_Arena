@@ -1,0 +1,22 @@
+image: "/assets/images/asteroids/asteroid_08.png"
+tile_width: 240
+tile_height: 240
+animations {
+  id: "a8-1"
+  start_tile: 1
+  end_tile: 1
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a8-2"
+  start_tile: 2
+  end_tile: 2
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a8-3"
+  start_tile: 3
+  end_tile: 3
+  playback: PLAYBACK_NONE
+}
+extrude_borders: 2

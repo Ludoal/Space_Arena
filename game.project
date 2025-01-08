@@ -1,0 +1,39 @@
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /builtins/render/default.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 1280
+height = 720
+high_dpi = 0
+vsync = 1
+update_frequency = 60
+
+[android]
+input_method = HiddenInputField
+
+[html5]
+scale_mode = fit
+
+[project]
+title = Space Arena
+dependencies = 
+
+[physics]
+use_fixed_timestep = 1
+debug = 0
+max_collision_object_count = 1024
+gravity_y = 0.0
+
+[library]
+include_dirs = 
+
+[sprite]
+max_count = 10000
+
+[collection]
+max_instances = 10000
+

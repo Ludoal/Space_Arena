@@ -1,0 +1,90 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+
+-- PROPERTIES
+
+go.property("zoom", 0) -- access by target.script
+
+-- FUNCTIONS
+
+local function set_zoom(self, zoom_new)
+	
+	local zoom_old = self.zoom
+	self.zoom = zoom_new
+	self.zoom_freeze = true
+	timer.delay(c.ZOOM_TIMER, false, function()
+		self.zoom_freeze = false
+	end)
+	
+	-- orthographic
+	go.set("#camera1", "orthographic_zoom", self.zoom)
+	go.animate("#camera1", "orthographic_zoom", go.PLAYBACK_ONCE_BACKWARD, zoom_old, go.EASING_INOUTQUAD, c.ZOOM_TIMER + 0.1)
+
+	--[[ perspective
+	self.altitude = self.altitude + self.altitude * (zoom_old - zoom_new)
+	self.position.z = self.altitude
+	go.set_position(self.position)
+	go.animate("#camera", "orthographic_zoom", go.PLAYBACK_ONCE_BACKWARD, zoom_old, go.EASING_INOUTQUAD, self.zoomTimer + 0.1)
+	print(self.zoom)]]
+	
+end
+
+-- CALLBACKS
+
+function init(self)
+	
+	msg.post(".", "acquire_input_focus")
+
+	msg.post("@render:", "use_camera_projection")
+	msg.post("#camera1", "enable")
+
+	-- vars
+	self.altitude = c.CAMERA_ALTITUDE
+	self.position = vmath.vector3(0, 0, self.altitude)
+	self.zoom = (c.ZOOM_MIN + c.ZOOM_MAX) / 2
+	go.set("#camera1", "orthographic_zoom", self.zoom)
+	self.zoom_freeze = false
+	
+end
+
+
+function final(self)
+	
+	msg.post(".", "release_input_focus")
+	msg.post("#camera1", "disable")
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.UPDATE_CAMERA then
+		if message.position then
+			local pos = go.get_position()
+			self.position.x = message.position.x
+			self.position.y = message.position.y
+			pos = vmath.lerp(c.ZOOM_TRANSITION, pos, self.position) -- smooth transition
+			go.set_position(pos)
+		end
+		if message.zoom then
+			set_zoom(self, message.zoom)
+		end
+	end
+	
+end
+
+
+function on_input(self, action_id, action)
+	
+	if action_id == h.ZOOM_IN and action.pressed and self.zoom < c.ZOOM_MAX and not self.zoom_freeze then
+		local zoom_new = self.zoom * c.ZOOM_FACTOR
+		set_zoom(self, zoom_new)
+	elseif action_id == h.ZOOM_OUT and action.pressed and self.zoom > c.ZOOM_MIN and not self.zoom_freeze then
+		local zoom_new = self.zoom / c.ZOOM_FACTOR
+		set_zoom(self, zoom_new)
+	end
+	
+end

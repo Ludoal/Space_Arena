@@ -1,0 +1,28 @@
+image: "/assets/images/asteroids/asteroid_05.png"
+tile_width: 450
+tile_height: 200
+animations {
+  id: "a5-1"
+  start_tile: 1
+  end_tile: 1
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a5-2"
+  start_tile: 2
+  end_tile: 2
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a5-3"
+  start_tile: 3
+  end_tile: 3
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a5-4"
+  start_tile: 4
+  end_tile: 4
+  playback: PLAYBACK_NONE
+}
+extrude_borders: 2

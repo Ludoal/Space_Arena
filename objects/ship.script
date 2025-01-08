@@ -1,0 +1,282 @@
+
+-- MODULES
+
+local c = require("modules.config")
+local h = require("modules.hashes")
+
+-- PROPERTIES
+
+go.property("velocity", vmath.vector3()) -- access by border.script
+
+-- CONSTANTS
+
+local V_0 = vmath.vector3()
+local V_U = vmath.vector3(0, 1, 0)
+local V_D = vmath.vector3(0, -1, 0)
+local V_R = vmath.vector3(1, 0, 0)
+local V_L = vmath.vector3(-1, 0, 0)
+
+-- FUNCTIONS
+
+local function show_exhaust(exhaust, action)
+
+	local enable_disable = action.pressed and "enable" or (action.released and "disable" or "")
+	msg.post(exhaust, enable_disable)
+
+end
+
+-- CALLBACKS
+
+function init(self)
+	
+	msg.post(".", "acquire_input_focus")
+
+	-- collision
+	self.impulse = V_0
+	self.correction = V_0
+
+	-- external force
+	self.force = V_0
+
+	-- ship
+	self.input_thrust_lng = V_0
+	self.input_thrust_lat = V_0
+	self.input_rotate = 0
+	self.thrust = V_0
+	self.rotate = 0
+	self.angle = 0
+
+	-- damper
+	self.damper = true
+
+	-- exhaust
+	msg.post("#exhaustFwd", "disable")
+	msg.post("#exhaustBwd1", "disable")
+	msg.post("#exhaustBwd2", "disable")
+	msg.post("#exhaustLatL", "disable")
+	msg.post("#exhaustLatR", "disable")
+	msg.post("#exhaustRotL", "disable")
+	msg.post("#exhaustRotR", "disable")
+
+	-- health
+	self.health = c.HEALTH_MAX
+	self.immune = false
+	msg.post("interface#arena", h.UPDATE_HEALTH, { health = self.health })
+
+	-- ammo
+	self.ammo  = c.AMMO_START
+	msg.post("interface#arena", h.UPDATE_AMMO, { ammo = self.ammo })
+
+	-- gun
+	self.gun = 1
+
+	-- stats timer
+	timer.delay(0.3, true, function()
+		local is_damper = self.damper and "ON" or "OFF"
+		local text1 = ("Damper: " .. is_damper)
+		msg.post("interface#arena", h.UPDATE_SHIP_DAMPER, { text = text1 })
+		local text2 = (
+			"Velocity: " .. string.format("%.1f", vmath.length(self.velocity)) ..
+			"\nAngle: " .. math.floor((-self.angle % 360 + 360) % 360)
+		)
+		msg.post("interface#arena", h.UPDATE_SHIP_STATS, { text = text2 })
+		local text3 = (
+			"Input rotate: " .. self.input_rotate ..
+			"\nRotation: " .. string.format("%.1f", self.rotate)
+		)
+		msg.post("interface#arena", h.UPDATE_SHIP_INPUT_1, { text = text3 })
+		local text4 = (
+			"Input thrust: " .. string.format("%.1f", self.input_thrust_lng.y) .. " / " .. string.format("%.1f", self.input_thrust_lat.x) ..
+			"\nThrust: " .. string.format("%.1f", self.thrust.y) .. " / " .. string.format("%.1f", self.thrust.x)
+		)
+		msg.post("interface#arena", h.UPDATE_SHIP_INPUT_2, { text = text4 })
+	end)
+	
+end
+
+
+function final(self)
+	
+	msg.post(".", "release_input_focus")
+	
+end
+
+
+function update(self, dt)
+
+	local velocity = self.velocity
+	
+	-- rotation
+	local input_rotate = self.input_rotate * dt
+	local rotate = self.rotate * (1 - c.ROTATE_FLARE * dt) + input_rotate
+	if self.damper and input_rotate then
+		rotate = rotate * (1 - c.DAMPER_ROT * vmath.length(velocity) / c.SPEED_MAX * dt) -- turn coordination
+	end
+	local angle = self.angle + rotate
+	local rotation = vmath.quat_rotation_z(math.rad(angle))
+
+	-- thrust
+	local input_thrust = (self.input_thrust_lng + self.input_thrust_lat) * dt
+	local thrust = self.thrust * (1 - c.THRUST_FLARE * dt) + input_thrust
+
+	-- linear friction
+	velocity = velocity * (1 - c.FRICTION_LINEAR * dt)
+	
+	-- damper
+	if self.damper and self.impulse == V_0 then
+		local axis_lng = vmath.rotate(rotation, V_U)
+		local velocity_lng = vmath.project(velocity, axis_lng)
+		if self.input_thrust_lng == V_0 then
+			velocity_lng = velocity_lng * (1 - c.DAMPER_LNG * dt)
+		end
+		local axis_lat = vmath.rotate(rotation, V_R)
+		local velocity_lat = vmath.project(velocity, axis_lat)
+		if self.input_thrust_lat == V_0 then
+			velocity_lat = velocity_lat * (1 - c.DAMPER_LAT * dt)
+		end
+		velocity = vmath.rotate(rotation, vmath.vector3(velocity_lat, velocity_lng, 0))
+	end
+	
+	-- ship velocity
+	velocity = velocity + vmath.rotate(rotation, thrust)
+	if vmath.length(velocity) > c.SPEED_MAX then
+		velocity = vmath.normalize(velocity) * c.SPEED_MAX
+	end
+
+	-- impulse (collision) + external force
+	velocity = velocity + self.impulse + self.force
+	
+	-- terminal velocity
+	if vmath.length(velocity) > c.VELOCITY_TERMINAL then
+		velocity = vmath.normalize(velocity) * c.VELOCITY_TERMINAL
+	end
+
+	-- position
+	local position = go.get_position() + velocity
+	go.set_position(position)
+	go.set_rotation(rotation)
+	msg.post("controller", h.UPDATE_LAYERS, { position = position })
+	--msg.post("target", "update_target", { position = position })
+
+	-- final values
+	self.rotate = rotate
+	self.angle = angle
+	self.thrust = thrust
+	self.velocity = velocity
+
+	-- reset
+	self.impulse = V_0
+	self.correction = V_0
+	self.force = V_0
+
+	--[[ debug
+	local q = go.get_rotation()
+	local z = select(3, vmath.quat_to_euler(q))
+	print(z)]]
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+
+	-- collision
+	-- https://defold.com/manuals/physics-resolving-collisions/
+	if message_id == h.CONTACT_POINT_RESPONSE then
+		-- correction
+		if message.distance > 0 then
+			local proj = vmath.project(self.correction, message.normal * message.distance)
+			if proj < 1 then
+				local comp = (message.distance - message.distance * proj) * message.normal
+				go.set_position(go.get_position() + comp)
+				self.correction = self.correction + comp
+			end
+		end
+		-- impulse
+		self.impulse = message.normal * vmath.project(vmath.vector3(-self.velocity.x, -self.velocity.y, 0), message.normal) * 1.5
+		-- damage
+		if vmath.length(self.impulse) > 5 and not self.immune then
+			self.health = self.health - 1
+			self.immune = true
+			sprite.set_constant("#sprite", "tint", vmath.vector4(1, 0.5, 0.7, 1))
+			timer.delay(5, false, function()
+				sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+				self.immune = false
+			end)
+			msg.post("interface#arena", h.UPDATE_HEALTH, { health = self.health, tint = "red" })
+			go.set_position(go.get_position(), "effects")
+			if self.health == 0 then
+				go.delete()
+				msg.post("controller", h.DEATH)
+			else
+				particlefx.play("effects#break")
+			end
+		end
+
+	-- border forcefield
+	elseif message_id == h.FIELD_FORCE then
+		self.force = message.force
+
+	-- health
+	elseif message_id == h.ADD_LIFE then
+		if self.health < self.healthMax then
+			self.health = self.health + 1
+			msg.post("interface#arena", h.UPDATE_HEALTH, { health = self.health, tint = "green" })
+		end
+
+	-- ammo
+	elseif message_id == h.ADD_AMMO then
+		self.ammo = self.ammo + 100
+		msg.post("interface#arena", h.UPDATE_AMMO, { ammo = self.ammo, tint = "green" })
+
+	-- gun
+	elseif message_id == h.ADD_GUN then
+		self.gun = 3
+	end
+	
+end
+
+
+function on_input(self, action_id, action)
+	
+	-- damper
+	if action_id == h.DAMPER and action.pressed then
+		self.damper = self.damper == false and true or false
+
+	-- rotate
+	elseif action_id == h.ROT_L then
+		self.input_rotate = self.input_rotate + c.ROTATE_POWER * ((action.pressed and 1 or 0) - (action.released and 1 or 0))
+		show_exhaust("#exhaustRotL", action)
+	elseif action_id == h.ROT_R then
+		self.input_rotate = self.input_rotate + c.ROTATE_POWER * ((action.pressed and -1 or 0) - (action.released and -1 or 0))
+		show_exhaust("#exhaustRotR", action)
+
+	-- thrust
+	elseif action_id == h.THR_F then
+		self.input_thrust_lng = self.input_thrust_lng + c.THRUST_FWD * ((action.pressed and V_U or V_0) - (action.released and V_U or V_0))
+		show_exhaust("#exhaustFwd", action)
+	elseif action_id == h.THR_B then
+		self.input_thrust_lng = self.input_thrust_lng + c.THRUST_BWD * ((action.pressed and V_D or V_0) - (action.released and V_D or V_0))
+		show_exhaust("#exhaustBwd1", action)
+		show_exhaust("#exhaustBwd2", action)
+	elseif action_id == h.THR_L then
+		self.input_thrust_lat = self.input_thrust_lat + c.THRUST_LAT * ((action.pressed and V_L or V_0) - (action.released and V_L or V_0))
+		show_exhaust("#exhaustLatL", action)
+	elseif action_id == h.THR_R then
+		self.input_thrust_lat = self.input_thrust_lat + c.THRUST_LAT * ((action.pressed and V_R or V_0) - (action.released and V_R or V_0))
+		show_exhaust("#exhaustLatR", action)
+		
+	-- fire
+elseif action_id == h.FIRE and action.pressed and self.ammo >= self.gun then
+		local rotation = go.get_rotation()
+		local position = go.get_position() + vmath.rotate(rotation, vmath.vector3(0, 40, 0))
+		factory.create("#bullet", position, rotation)
+		self.ammo = self.ammo - 1
+		if self.gun == 3 then
+			factory.create("#bullet", position, rotation * vmath.quat_rotation_z(math.rad(-7)))
+			factory.create("#bullet", position, rotation * vmath.quat_rotation_z(math.rad(7)))
+			self.ammo = self.ammo - 2
+		end
+		msg.post("interface#arena", h.UPDATE_AMMO, { ammo = self.ammo })
+	end
+	
+end

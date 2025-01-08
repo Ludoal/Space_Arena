@@ -1,0 +1,20 @@
+images {
+  image: "/assets/images/ships/DKO-api-X1.png"
+}
+images {
+  image: "/assets/images/ships/CX16-X1.png"
+}
+images {
+  image: "/assets/images/ships/WO84-wu-X1.png"
+}
+animations {
+  id: "exhaust"
+  images {
+    image: "/assets/images/ships/thrust-1.png"
+  }
+  images {
+    image: "/assets/images/ships/thrust-2.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+}
+extrude_borders: 2

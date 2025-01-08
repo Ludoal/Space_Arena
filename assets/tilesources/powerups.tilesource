@@ -1,0 +1,23 @@
+image: "/assets/images/misc/powerups.png"
+tile_width: 150
+tile_height: 150
+collision_groups: "powerups"
+animations {
+  id: "ammo"
+  start_tile: 8
+  end_tile: 8
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "gun"
+  start_tile: 4
+  end_tile: 4
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "life"
+  start_tile: 5
+  end_tile: 5
+  playback: PLAYBACK_NONE
+}
+extrude_borders: 2

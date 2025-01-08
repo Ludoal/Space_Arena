@@ -1,0 +1,16 @@
+image: "/assets/images/asteroids/asteroid_14.png"
+tile_width: 110
+tile_height: 110
+animations {
+  id: "a14-1"
+  start_tile: 1
+  end_tile: 1
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a14-2"
+  start_tile: 2
+  end_tile: 2
+  playback: PLAYBACK_NONE
+}
+extrude_borders: 2

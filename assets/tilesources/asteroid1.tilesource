@@ -1,0 +1,40 @@
+image: "/assets/images/asteroids/asteroid_01.png"
+tile_width: 600
+tile_height: 500
+animations {
+  id: "a1-1"
+  start_tile: 1
+  end_tile: 1
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a1-2"
+  start_tile: 2
+  end_tile: 2
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a1-3"
+  start_tile: 3
+  end_tile: 3
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a1-4"
+  start_tile: 4
+  end_tile: 4
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a1-5"
+  start_tile: 5
+  end_tile: 5
+  playback: PLAYBACK_NONE
+}
+animations {
+  id: "a1-6"
+  start_tile: 6
+  end_tile: 6
+  playback: PLAYBACK_NONE
+}
+extrude_borders: 2

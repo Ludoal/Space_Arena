@@ -1,0 +1,70 @@
+
+-- MODULES
+
+local h = require("modules.hashes")
+
+-- CALLBACKS
+
+function init(self)
+	
+	-- disable end screen
+	gui.set_enabled(gui.get_node("game_over"), false)
+	
+end
+
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == h.UPDATE_SHIP_DAMPER then
+		gui.set_text(gui.get_node("damper"), message.text)
+		
+	elseif message_id == h.UPDATE_SHIP_STATS then
+		gui.set_text(gui.get_node("stats"), message.text)
+
+	elseif message_id == h.UPDATE_SHIP_INPUT_1 then
+		gui.set_text(gui.get_node("input1"), message.text)
+
+	elseif message_id == h.UPDATE_SHIP_INPUT_2 then
+		gui.set_text(gui.get_node("input2"), message.text)
+		
+	elseif message_id == h.UPDATE_FPS then
+		gui.set_text(gui.get_node("fps"), string.format("FPS: %.1f", message.fps))
+		
+	elseif message_id == h.UPDATE_SCORE then
+		gui.set_text(gui.get_node("score"), string.format("Score: %d", message.score))
+
+	-- health
+	elseif message_id == h.UPDATE_HEALTH then
+		gui.set_text(gui.get_node("health_value"), string.format("%d", message.health))
+		if message.tint == "green" then
+			gui.set_color(gui.get_node("health_value"), vmath.vector3(0, 1, 0))
+		elseif message.tint == "red" then
+			gui.set_color(gui.get_node("health_value"), vmath.vector3(1, 0, 0))
+		end
+		timer.delay(2, false, function()
+			gui.set_color(gui.get_node("health_value"), vmath.vector3(1, 1, 1))
+		end)
+
+	-- ammo
+	elseif message_id == h.UPDATE_AMMO then
+		gui.set_text(gui.get_node("ammo_value"), string.format("%d", message.ammo))
+		if message.tint == "green" then
+			gui.set_color(gui.get_node("ammo_value"), vmath.vector3(0, 1, 0))
+		end
+		timer.delay(2, false, function()
+			gui.set_color(gui.get_node("ammo_value"), vmath.vector3(1, 1, 1))
+		end)
+
+	-- game time
+	elseif message_id == h.GAME_TIME then
+		gui.set_text(gui.get_node("time"), string.format("Time: %01d:%02d", message.min, message.sec))
+		
+	-- game over
+	elseif message_id == h.GAME_OVER then
+		gui.set_enabled(gui.get_node("game_over"), true)
+	elseif message_id == h.TIME_UP then
+		gui.set_text(gui.get_node("game_over"), "Time's up !")
+		gui.set_enabled(gui.get_node("game_over"), true)
+	end
+	
+end

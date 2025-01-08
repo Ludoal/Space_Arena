@@ -1,0 +1,13 @@
+
+-- CALLBACKS
+
+function init(self)
+	
+	local scale = 1 + math.random(-5, 3) / 10
+	go.set_scale(vmath.vector3(scale, scale, scale))
+	go.set_parent(".", "layer_stars")
+	scale = scale - 0.3
+	local duration = math.random(1, 20) / 5
+	go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG, scale, go.EASING_INOUTQUAD, duration)
+	
+end
