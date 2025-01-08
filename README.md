@@ -10,4 +10,5 @@ Asteroid game to learn the engine:
 - Zero G movement and physics
 - Collision handling
 - Basic AI with raycast
+- Animations
 - GUI elements
