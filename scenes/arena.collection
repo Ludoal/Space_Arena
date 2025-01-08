@@ -1,29 +1,29 @@
 name: "arena"
 instances {
   id: "ship"
-  prototype: "/prototypes/ship.go"
+  prototype: "/objects/ship.go"
 }
 instances {
   id: "camera"
-  prototype: "/prototypes/camera.go"
+  prototype: "/objects/camera.go"
   position {
     z: 1000.0
   }
 }
 instances {
   id: "target"
-  prototype: "/prototypes/target.go"
+  prototype: "/objects/target.go"
   position {
     y: 2269.0
   }
 }
 instances {
   id: "vortex"
-  prototype: "/prototypes/vortex.go"
+  prototype: "/objects/vortex.go"
 }
 instances {
   id: "enemy"
-  prototype: "/prototypes/enemy.go"
+  prototype: "/objects/enemy.go"
   position {
     x: -803.0
     y: 470.0

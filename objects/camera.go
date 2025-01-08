@@ -1,6 +1,6 @@
 components {
   id: "camera"
-  component: "/prototypes/camera.script"
+  component: "/objects/camera.script"
 }
 embedded_components {
   id: "camera1"

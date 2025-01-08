@@ -1,6 +1,6 @@
 components {
   id: "target"
-  component: "/prototypes/target.script"
+  component: "/objects/target.script"
 }
 embedded_components {
   id: "sprite"

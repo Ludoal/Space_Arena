@@ -1,6 +1,6 @@
 components {
   id: "vortex"
-  component: "/prototypes/vortex.script"
+  component: "/objects/vortex.script"
 }
 embedded_components {
   id: "sprite"
