@@ -1,7 +1,7 @@
 
 local M = {}
 
-M.DEBUG = true
+M.DEBUG = false
 
 -- main_controller
 M.BOOT_SCENE = "menu" -- default: "menu"
@@ -24,14 +24,14 @@ M.BULLET_DISTANCE = 1000
 -- camera
 M.CAMERA_ALTITUDE = 1000
 M.ZOOM_MIN = 0.4 -- fixed at 0.2 if DEBUG true
-M.ZOOM_MAX = 0.8
+M.ZOOM_MAX = 0.6
 M.ZOOM_FACTOR = 1.3
 M.ZOOM_TIMER = 0.8
 M.ZOOM_TRANSITION = 0.05
 
 -- enemy
-M.CHASE_DIST_START = 800
-M.CHASE_DIST_STOP = 1100
+M.CHASE_DIST_START = 1000
+M.CHASE_DIST_STOP = 1200
 M.CHASE_DIST_TARGET = 400
 M.ENEMY_HEALTH = 3
 M.ENEMY_SPEED = 400
@@ -41,6 +41,7 @@ M.ENEMY_FIRE_RATE = 2
 -- ship
 M.VELOCITY_TERMINAL = 30
 M.IMPULSE_STRENGTH = 1.2 -- collision restitution
+M.DAMAGE_THRESHOLD = 7 -- sensitivity to collision
 M.HEALTH_MAX = 5
 M.AMMO_START = 300
 M.SPEED_MAX = 20

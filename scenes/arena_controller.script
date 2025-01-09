@@ -149,7 +149,10 @@ function on_message(self, message_id, message, sender)
 
 	-- Spawn new powerup
 	elseif message_id == h.SPAWN_POWERUP then
-		spawn_powerup(message.type)
+		local delay = message.type == 1 and 5 or 30 -- 30s for life, 5s for ammo
+		timer.delay(delay, false, function()
+			spawn_powerup(message.type)
+		end)
 
 	-- Death
 	elseif message_id == h.DEATH then

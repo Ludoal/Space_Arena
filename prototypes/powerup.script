@@ -43,17 +43,12 @@ function on_message(self, message_id, message, sender)
 		if self.type == 3 then
 			msg.post("ship", h.ADD_GUN)
 		else
-			local delay
 			if self.type == 2 then
 				msg.post("ship", h.ADD_LIFE)
-				delay = 20
 			elseif self.type == 1 then
 				msg.post("ship", h.ADD_AMMO)
-				delay = 5
 			end
-			timer.delay(delay, false, function()
-				msg.post("controller", h.SPAWN_POWERUP, { type = self.type })
-			end)
+			msg.post("controller", h.SPAWN_POWERUP, { type = self.type })
 		end
 	end
 	

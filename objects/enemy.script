@@ -107,7 +107,7 @@ function on_message(self, message_id, message, sender)
 		self.target = message.target
 
 	-- Bullet hit
-	elseif message_id == h.BULLET_HIT and not self.immune then
+	elseif message_id == h.BULLET_HIT_BY_SHIP and not self.immune then
 		self.health = self.health - 1
 		self.immune = true
 		sprite.set_constant("#sprite", "tint", vmath.vector4(1, 0.5, 0.7, 1))

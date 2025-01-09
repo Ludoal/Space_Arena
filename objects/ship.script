@@ -188,7 +188,7 @@ function on_message(self, message_id, message, sender)
 		-- impulse
 		self.impulse = message.normal * vmath.project(vmath.vector3(-self.velocity.x, -self.velocity.y, 0), message.normal) * c.IMPULSE_STRENGTH
 		-- damage
-		if vmath.length(self.impulse) > 10 and not self.immune then
+		if vmath.length(self.impulse) > c.DAMAGE_THRESHOLD and not self.immune then
 			msg.post("#", h.REMOVE_LIFE)
 		end
 
