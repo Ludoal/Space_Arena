@@ -7,13 +7,21 @@ local h = require("modules.hashes")
 
 function init(self)
 	
+	-- Input focus
 	msg.post(".", "acquire_input_focus")
+
+	-- High score from file
+	local filename = sys.get_save_file("space_arena", "highscore")
+	local data = sys.load(filename)
+	local highscore = data.highscore or 0
+	gui.set_text(gui.get_node("high"), string.format("%d", highscore))
 	
 end
 
 
 function final(self)
 	
+	-- Input focus
 	msg.post(".", "release_input_focus")
 	
 end
@@ -21,6 +29,7 @@ end
 
 function on_input(self, action_id, action)
 	
+	-- Buttons click
 	if action_id == h.CLICK_L and action.pressed then
 		local button1 = gui.get_node("btn_1")
 		local button2 = gui.get_node("btn_2")

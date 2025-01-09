@@ -31,6 +31,7 @@ embedded_components {
   "group: \"ship\"\n"
   "mask: \"asteroids\"\n"
   "mask: \"border\"\n"
+  "mask: \"bullets_enemy\"\n"
   "mask: \"powerups\"\n"
   "embedded_collision_shape {\n"
   "  shapes {\n"
@@ -50,9 +51,9 @@ embedded_components {
   ""
 }
 embedded_components {
-  id: "bullet"
+  id: "bullet_ship"
   type: "factory"
-  data: "prototype: \"/prototypes/bullet.go\"\n"
+  data: "prototype: \"/prototypes/bullet_ship.go\"\n"
   ""
 }
 embedded_components {

@@ -20,32 +20,46 @@ local function layer_position(layer, position, factor)
 	
 end
 
+
+local function spawn_powerup(type)
+	
+	local position = u.random_in_circle(c.ARENA_SIZE, 300, 200)
+	factory.create("factories#powerup", position, nil, { type = type })
+	
+end
+
 -- CALLBACKS
 
 function init(self)
 
-	-- game
+	-- Window size
 	self.windowWidth, self.windowHeight = window.get_size()
 
-	-- random seed
+	-- Random seed
 	u.random_seed()
 
-	-- vars
+	-- Vars
 	self.frames = {}
 	self.fps = 0
 	self.score = 0
 
-	-- effects
+	-- High score
+	local filename = sys.get_save_file("space_arena", "highscore")
+	local data = sys.load(filename)
+	self.highscore = data.highscore or 0
+	msg.post("interface#arena", h.HIGH_SCORE, { score = self.highscore })
+
+	-- Disable effects
 	msg.post("effects#explosion", "disable")
 
-	-- stars
+	-- Create stars background
 	local width = c.ARENA_SIZE * 1.2
 	for i = 1, c.STARS_COUNT do
 		local position = vmath.vector3(math.random(-width, width), math.random(-width, width), 0)
 		factory.create("factories#star", position)
 	end
 	
-	-- arena border
+	-- Create arena border
 	for i = 1, c.BORDER_SEGMENTS do
 		local a = i * math.pi * 2 / c.BORDER_SEGMENTS
 		local x, y = math.cos(a) * c.ARENA_SIZE, math.sin(a) * c.ARENA_SIZE
@@ -54,43 +68,46 @@ function init(self)
 		factory.create("factories#border", position, rotation)
 	end
 
-	-- powerups
-	for i = 1, 3 do
-		local position = u.random_in_circle(c.ARENA_SIZE, 300, 200)
-		factory.create("factories#powerup", position, nil, { type = i })
+	-- Spawn powerups
+	for i = 1, 2 do
+		spawn_powerup(i)
 	end
+	-- gun upgrade later
+	timer.delay(30, false, function()
+		spawn_powerup(3)
+	end)
 	
-	-- starting asteroids
+	-- Spawn starting asteroids
 	for i = 1, 10 do
 		local position = u.random_in_circle(c.ARENA_SIZE, 200, 300)
 		local type = math.random(1, 2)
 		factory.create("factories#asteroid" .. type, position, nil, { type = type })
 	end
 
-	-- asteroid spawn
+	-- Spawn asteroids timer
 	timer.delay(10, true, function()
 		local type = math.random(2, 5)
 		factory.create("factories#asteroid" .. type, vmath.vector3(0, 0, 0), nil, { type = type, animate = true })
 	end)
 
-	-- fps timer
-	timer.delay(0.1, true, function()
-		msg.post("interface#arena", h.UPDATE_FPS, { fps = self.fps })
-	end)
+	-- FPS timer
+	if c.DEBUG then
+		timer.delay(0.1, true, function()
+			msg.post("interface#arena", h.UPDATE_FPS, { fps = self.fps })
+		end)
+	end
 
-	-- game timer
-	self.count = 0
+	-- Game timer
+	self.count = c.GAME_TIME
 	timer.delay(1, true, function()
-		self.count = self.count + 1
+		self.count = self.count - 1
 		local min = math.floor(self.count / 60)
 		local sec = self.count % 60
 		msg.post("interface#arena", h.GAME_TIME, { min = min, sec = sec })
-		if self.count == c.GAME_TIME then
-			go.delete("ship")
+		if self.count == 0 then
+			msg.post("ship", "disable")
 			msg.post("interface#arena", h.TIME_UP)
-			timer.delay(5, false, function()
-				msg.post("main:/controller", h.SHOW_MENU)
-			end)
+			msg.post("#", h.GAME_OVER)
 		end
 	end)
 	
@@ -100,14 +117,16 @@ end
 
 function update(self, dt)
 
-	-- game
+	-- Window size (doesn't work)
 	self.windowWidth, self.windowHeight = window.get_size()
 
-	-- fps
-	self.frames[#self.frames + 1] = socket.gettime()
-	if #self.frames == 61 then
-		table.remove(self.frames, 1)
-		self.fps = 1 / ((self.frames[#self.frames] - self.frames[1]) / (#self.frames - 1))
+	-- FPS
+	if c.DEBUG then
+		self.frames[#self.frames + 1] = socket.gettime()
+		if #self.frames == 61 then
+			table.remove(self.frames, 1)
+			self.fps = 1 / ((self.frames[#self.frames] - self.frames[1]) / (#self.frames - 1))
+		end
 	end
 	
 end
@@ -115,7 +134,7 @@ end
 
 function on_message(self, message_id, message, sender)
 
-	-- background layers and camera
+	-- Background layers and camera position
 	if message_id == h.UPDATE_LAYERS then
 		layer_position("layer_stars", message.position, 2)
 		layer_position("layer_1", message.position, 2.2)
@@ -123,21 +142,30 @@ function on_message(self, message_id, message, sender)
 		layer_position("layer_3", message.position, 4.3)
 		msg.post("camera", h.UPDATE_CAMERA, { position = message.position })
 
-	-- update score
+	-- Update score
 	elseif message_id == h.UPDATE_SCORE then
 		self.score = self.score + message.score_update
 		msg.post("interface#arena", h.UPDATE_SCORE, { score = self.score })
 
-	-- death
+	-- Spawn new powerup
+	elseif message_id == h.SPAWN_POWERUP then
+		spawn_powerup(message.type)
+
+	-- Death
 	elseif message_id == h.DEATH then
-		msg.post("effects#explosion", "enable")
-		sprite.play_flipbook("effects#explosion", "anim", function()
-			msg.post("effects#explosion", "disable")
-		end)
 		msg.post("interface#arena", h.GAME_OVER)
+		msg.post("#", h.GAME_OVER)
+
+	-- Game over
+	elseif message_id == h.GAME_OVER then
 		timer.delay(5, false, function()
 			msg.post("main:/controller", h.SHOW_MENU)
 		end)
+		-- save high score
+		if self.score > self.highscore then
+			local filename = sys.get_save_file("space_arena", "highscore")
+			sys.save(filename, { highscore = self.score })
+		end
 	end
 	
 end

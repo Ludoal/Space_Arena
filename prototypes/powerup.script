@@ -19,9 +19,11 @@ local POWERUPS = {
 
 function init(self)
 
+	-- Data
 	self.name = POWERUPS[self.type].name
 	self.tint = POWERUPS[self.type].tint
 
+	-- Set sprite
 	sprite.play_flipbook("#sprite", self.name)
 	sprite.set_constant("#sprite", "tint", self.tint)
 
@@ -30,6 +32,7 @@ end
 
 function on_message(self, message_id, message, sender)
 	
+	-- Pickup
 	if message_id == h.TRIGGER_RESPONSE then
 		local position = go.get_position()
 		position.z = 1
@@ -37,12 +40,20 @@ function on_message(self, message_id, message, sender)
 		go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD, vmath.vector3(2, 2, 2), go.EASING_LINEAR, 0.5, 0, function()
 			go.delete()
 		end)
-		if self.type == 1 then
-			msg.post("ship", h.ADD_AMMO)
-		elseif self.type == 2 then
-			msg.post("ship", h.ADD_LIFE)
-		elseif self.type == 3 then
+		if self.type == 3 then
 			msg.post("ship", h.ADD_GUN)
+		else
+			local delay
+			if self.type == 2 then
+				msg.post("ship", h.ADD_LIFE)
+				delay = 20
+			elseif self.type == 1 then
+				msg.post("ship", h.ADD_AMMO)
+				delay = 5
+			end
+			timer.delay(delay, false, function()
+				msg.post("controller", h.SPAWN_POWERUP, { type = self.type })
+			end)
 		end
 	end
 	

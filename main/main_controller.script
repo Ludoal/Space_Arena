@@ -3,12 +3,14 @@
 
 -- MODULES
 
+local c = require("modules.config")
 local h = require("modules.hashes")
 
 -- FUNCTIONS
 
-local function show(self, proxy)
+local function load_proxy(self, proxy)
 	
+	-- Unload current then load next
 	if self.current_proxy then
 		msg.post(self.current_proxy, "unload")
 		self.current_proxy = nil
@@ -21,17 +23,22 @@ end
 
 function init(self)
 	
+	-- Input focus
 	msg.post(".", "acquire_input_focus")
 
+	-- Vars
 	self.current_proxy = nil
-	self.boot = h.SHOW_ARENA -- h.SHOW_MENU
-	msg.post("#", self.boot)
+
+	-- Boot scene
+	local boot = h["SHOW_" .. string.upper(c.BOOT_SCENE)]
+	msg.post("#", boot)
 	
 end
 
 
 function final(self)
 	
+	-- Input focus
 	msg.post(".", "release_input_focus")
 	
 end
@@ -39,21 +46,27 @@ end
 
 function on_message(self, message_id, message, sender)
 
+	-- Load proxy
 	if message_id == h.SHOW_MENU then
-		show(self, "#menu")
+		load_proxy(self, "#menu")
 	elseif message_id == h.SHOW_ARENA then
-		show(self, "#arena")
-
-	-- proxy status
+		load_proxy(self, "#arena")
 	elseif message_id == h.PROXY_LOADED then
 		self.current_proxy = sender
-		print("proxy_loaded", sender)
 		msg.post(sender, "enable")
-	elseif message_id == h.PROXY_UNLOADED then
-		print("proxy_unloaded", sender)
+	end
+	
+	-- Proxy status
+	if c.DEBUG then
+		if message_id == h.PROXY_LOADED then
+			print("proxy_loaded", sender)
+		elseif message_id == h.PROXY_UNLOADED then
+			print("proxy_unloaded", sender)
+		end
+	end
 
-	-- exit
-	elseif message_id == h.QUIT then
+	-- Close application
+	if message_id == h.QUIT then
 		sys.exit(0)
 	end
 	
@@ -62,6 +75,7 @@ end
 
 function on_input(self, action_id, action)
 	
+	-- ESC back to menu
 	if action_id == h.ESCAPE and action.pressed then
 		msg.post("#", h.SHOW_MENU)
 	end

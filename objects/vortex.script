@@ -3,6 +3,7 @@
 
 function init(self)
 	
+	-- Assign to last layer
 	go.set_parent(".", "layer_1")
 	
 end

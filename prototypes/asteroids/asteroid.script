@@ -16,7 +16,7 @@ go.property("animate", false) -- access by arena.script
 
 function init(self)
 	
-	-- vars
+	-- Data from file
 	local type = "a" .. self.type
 	self.size = asteroids[type]["size"]
 	self.hp = self.size
@@ -24,7 +24,7 @@ function init(self)
 	physics.update_mass("#co", self.mass)
 	self.next = asteroids[type]["next"]
 
-	--animation
+	--Animation
 	local angle = math.random(0, 200) * math.pi / 100
 	go.set_rotation(vmath.quat_rotation_z(angle))
 	local force = math.random(10, 20) * 10000 / self.size
@@ -32,12 +32,13 @@ function init(self)
 	msg.post("#co", "apply_force", { force = vmath.vector3(x, y, 0) * force, position = go.get_position() })
 	local angular_velocity = vmath.vector3(0, 0 , math.random(1, 10) / 10 / self.size)
 	go.set("#co", "angular_velocity", angular_velocity)
-	local scale = vmath.vector3(0.1, 0.1, 0.1)
+	-- in game spawn
 	if self.animate then
+		local scale = vmath.vector3(0.1, 0.1, 0.1)
 		go.animate(".", "scale", go.PLAYBACK_ONCE_BACKWARD, scale, go.EASING_LINEAR, 2)
 	end
 
-	-- hit timer
+	-- Hit timer (to avoid multiple split with upgraded gun)
 	self.hit_timer = false
 	
 end
@@ -45,12 +46,15 @@ end
 
 function on_message(self, message_id, message, sender)
 	
-	if message_id == h.BULLET_HIT then
+	-- Bullet hit
+	if message_id == h.BULLET_HIT or message_id == h.BULLET_HIT_BY_SHIP then
 		local score_update = 0
+		-- crack
 		if self.hp > 1 then
 			local animation = self.size - self.hp + 2
 			sprite.play_flipbook("#sprite", "a" .. self.type .. "-" .. animation)
 			self.hp = self.hp - 1
+		-- split or delete
 		elseif not self.hit_timer then
 			go.delete()
 			go.set_position(go.get_position(), "effects")
@@ -68,7 +72,10 @@ function on_message(self, message_id, message, sender)
 				self.hit_timer = false
 			end)
 		end
-		msg.post("controller", h.UPDATE_SCORE, { score_update = score_update })
+		-- update score
+		if message_id == h.BULLET_HIT_BY_SHIP then
+			msg.post("controller", h.UPDATE_SCORE, { score_update = score_update })
+		end
 	end
 	
 end

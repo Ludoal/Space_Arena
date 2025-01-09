@@ -47,7 +47,7 @@ embedded_instances {
   id: "controller"
   data: "components {\n"
   "  id: \"arena\"\n"
-  "  component: \"/scenes/arena.script\"\n"
+  "  component: \"/scenes/arena_controller.script\"\n"
   "}\n"
   ""
 }

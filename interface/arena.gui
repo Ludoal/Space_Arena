@@ -22,7 +22,6 @@ nodes {
   }
   type: TYPE_TEXT
   text: "Velocity:\n"
-  "Rotation:\n"
   "Angle:"
   font: "text_regular"
   id: "stats"
@@ -49,6 +48,7 @@ nodes {
   id: "fps"
   pivot: PIVOT_SW
   inherit_alpha: true
+  enabled: false
 }
 nodes {
   position {
@@ -112,7 +112,7 @@ nodes {
 }
 nodes {
   position {
-    x: 1077.0
+    x: 1061.0
     y: 625.0
   }
   scale {
@@ -124,7 +124,7 @@ nodes {
     y: 100.0
   }
   type: TYPE_TEXT
-  text: "Highest: 0"
+  text: "High score: 0"
   font: "text_bold"
   id: "high"
   pivot: PIVOT_NW
@@ -144,7 +144,7 @@ nodes {
     y: 100.0
   }
   type: TYPE_TEXT
-  text: "Damper:"
+  text: "Damper (Z):"
   font: "text_regular"
   id: "damper"
   xanchor: XANCHOR_RIGHT
@@ -172,6 +172,7 @@ nodes {
   xanchor: XANCHOR_RIGHT
   pivot: PIVOT_SW
   inherit_alpha: true
+  enabled: false
 }
 nodes {
   position {
@@ -214,6 +215,7 @@ nodes {
   xanchor: XANCHOR_RIGHT
   pivot: PIVOT_SW
   inherit_alpha: true
+  enabled: false
 }
 nodes {
   position {

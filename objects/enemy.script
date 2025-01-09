@@ -7,67 +7,134 @@ local u = require("modules.utils")
 
 -- FUNCTIONS
 
-local function draw_line(from, to)
+local function draw_debug_line(from, to)
 	
 	msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = vmath.vector4(1,0,0,1) })
 	
-end
-
-
-local function enemy_path()
-
-	return u.random_in_circle(c.ARENA_SIZE, 1000, 200)
-
 end
 
 -- CALLBACKS
 
 function init(self)
 
-	self.speed = 200
-	self.auto = true
-	self.state = "wander"
-	self.target = enemy_path()
+	-- Vars
+	self.health = c.ENEMY_HEALTH
+	self.immune = false
+	self.enabled = true
+	self.speed = 0
+	self.auto = true -- debug target
+	self.chase = false
+	self.fire = false
+	self.target = nil
+
+	-- Initial position
+	local pos = u.random_in_circle(c.ARENA_SIZE, 1000, 200)
+	go.set_position(pos)
+
+	-- Fire timer
+	timer.delay(c.ENEMY_FIRE_RATE, true, function()
+		if self.enabled and self.fire then
+			local rotation = go.get_rotation()
+			local position = go.get_position() + vmath.rotate(rotation, vmath.vector3(0, 40, 0))
+			factory.create("#bullet_enemy", position, rotation)
+		end
+	end)
 	
 end
 
 
 function update(self, dt)
 
+	local pos = go.get_position()
+	local rot = go.get_rotation()
+
+	-- Target
 	if self.target then
-		local from = go.get_position()
-		local to = self.target
-		local result = physics.raycast(from, to, { hash("asteroids") } )
-		if result then
-			self.aim = result.position - vmath.normalize(result.position - from) * 100
-			if c.DEBUG then
-				draw_line(from, self.aim)
-			end
-		else
-			self.aim = to
-			if c.DEBUG then
-				draw_line(from, to)
-			end
+		local aim = self.target
+		-- check for obstacles
+		local result = physics.raycast(pos, aim, { hash("asteroids") } )
+		if result and result.position ~= pos then
+			self.chase = false
+			aim = result.position - vmath.normalize(result.position - pos) * 100 -- to avoid collision (rough)
 		end
-		local dir = vmath.normalize(self.aim - from)
-		local dist = vmath.length(self.aim - from)
-		local new_pos = from + dir * math.min(vmath.lerp(0.9, self.speed, dist), self.speed) * dt
-		go.set_position(new_pos)
+		local dist = vmath.length(aim - pos)
+		-- draw path
+		if c.DEBUG then
+			draw_debug_line(pos, aim)
+		end
+		-- choose new target if too close
 		if dist < 50 then
 			self.target = nil
 		end
-	elseif self.state == "wander" then
-		self.target = enemy_path()
+		-- set new position
+		local dir = vmath.normalize(aim - pos) or vmath.vector3()
+		local dist_corrected = self.chase and math.max(0, dist - c.CHASE_DIST_TARGET) or dist -- stop chase
+		self.speed = math.min(vmath.lerp(0.95, self.speed, dist_corrected), vmath.lerp(0.01, self.speed, c.ENEMY_SPEED))
+		local new_pos = pos + dir * self.speed * dt
+		go.set_position(new_pos)
+		-- set new angle
+		local angle = u.get_angle(rot)
+		local aim_angle = math.atan2(-dir.x, dir.y)
+		local new_angle = vmath.lerp(0.05, angle, aim_angle)
+		go.set_rotation(vmath.quat_rotation_z(new_angle))
+	elseif self.auto then
+		-- new target
+		self.target = u.random_in_circle(c.ARENA_SIZE, 100, 200)
 	end
+
+	-- Chase
+	-- position
+	local ship_pos = go.get_position("ship")
+	local ship_dist = vmath.length(ship_pos - pos)
+	if ship_dist < c.CHASE_DIST_START then
+		self.chase = true
+		self.target = ship_pos
+		
+	elseif ship_dist > c.CHASE_DIST_STOP then
+		self.chase = false
+	end
+	-- fire
+	self.fire = (self.chase and ship_dist <= c.ENEMY_FIRE_RANGE) and true or false
 	
 end
 
 
 function on_message(self, message_id, message, sender)
 	
+	-- Debug manual target with mouse
 	if message_id == h.ENEMY_TARGET then
 		self.auto = message.target and true or false
 		self.target = message.target
+
+	-- Bullet hit
+	elseif message_id == h.BULLET_HIT and not self.immune then
+		self.health = self.health - 1
+		self.immune = true
+		sprite.set_constant("#sprite", "tint", vmath.vector4(1, 0.5, 0.7, 1))
+		timer.delay(5, false, function()
+			sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+			self.immune = false
+		end)
+		go.set_position(go.get_position(), "effects")
+		-- death
+		if self.health == 0 then
+			msg.post(".", "disable")
+			self.enabled = false
+			go.set_position(go.get_position(), "effects")
+			msg.post("effects#explosion", "enable")
+			sprite.play_flipbook("effects#explosion", "anim", function()
+				msg.post("effects#explosion", "disable")
+			end)
+			-- respawn
+			timer.delay(10, false, function()
+				local pos = u.random_in_circle(c.ARENA_SIZE, 1000, 200)
+				go.set_position(pos)
+				msg.post(".", "enable")
+				self.enabled = true
+			end)
+		else
+			particlefx.play("effects#break")
+		end
 	end
 	
 end

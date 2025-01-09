@@ -2,9 +2,6 @@ images {
   image: "/assets/images/ships/DKO-api-X1.png"
 }
 images {
-  image: "/assets/images/ships/CX16-X1.png"
-}
-images {
   image: "/assets/images/ships/WO84-wu-X1.png"
 }
 animations {

@@ -4,11 +4,15 @@
 local c = require("modules.config")
 local h = require("modules.hashes")
 
+-- PROPERTIES
+
+go.property("fromShip", false) -- parent via factory.create (go.get_parent doesn't work ?!)
+
 -- CALLBACKS
 
 function init(self)
 
-	-- animation
+	-- Animation
 	local position = go.get_position()
 	local rotation = go.get_rotation()
 	local duration = c.BULLET_DISTANCE / c.BULLET_SPEED
@@ -22,9 +26,11 @@ end
 
 function on_message(self, message_id, message, sender)
 	
+	-- Collision
 	if message_id == h.COLLISION_RESPONSE then
+		local text = self.fromShip and h.BULLET_HIT_BY_SHIP or h.BULLET_HIT
 		go.delete()
-		msg.post(message.other_id, h.BULLET_HIT, { position = go.get_position() })
+		msg.post(message.other_id, text)
 	end
 	
 end

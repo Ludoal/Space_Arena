@@ -1,4 +1,4 @@
-image: "/assets/images/misc/powerups.png"
+image: "/assets/images/objects/powerups.png"
 tile_width: 150
 tile_height: 150
 collision_groups: "powerups"

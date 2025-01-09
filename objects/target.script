@@ -8,33 +8,36 @@ local h = require("modules.hashes")
 
 function init(self)
 
+	-- Input focus
 	msg.post(".", "acquire_input_focus")
 
-	-- vars
+	-- Window size
 	self.window_width = go.get("controller#arena", "windowWidth") / 2
 	self.window_height = go.get("controller#arena", "windowHeight") / 2
 
-	msg.post("#sprite", "disable")
+	-- Hide
+	msg.post(".", "disable")
 	
 end
 
 
 function on_input(self, action_id, action)
 	
+	-- Enable/disable and position with mouse (debug manual)
 	if c.DEBUG then
+		-- enable (left click)
 		if action_id == h.CLICK_L and action.pressed then
 			self.enabled = true
-			msg.post("#sprite", "enable")
+			msg.post(".", "enable")
 			self.zoom = go.get("camera#camera", "zoom")
-			if go.exists("ship") then
-				local ship_position = go.get_position("ship")
-				local target = vmath.vector3(action.x - (self.window_width / 2), action.y - (self.window_height / 2), 0) / self.zoom + ship_position
-				go.set_position(target)
-				msg.post("enemy", h.ENEMY_TARGET, { target = target })
-			end
+			local ship_position = go.get_position("ship")
+			local target = vmath.vector3(action.x - (self.window_width / 2), action.y - (self.window_height / 2), 0) / self.zoom + ship_position
+			go.set_position(target)
+			msg.post("enemy", h.ENEMY_TARGET, { target = target })
+		-- disable (right click)
 		elseif action_id == h.CLICK_R and action.pressed then
 			self.enabled = false
-			msg.post("#sprite", "disable")
+			msg.post(".", "disable")
 			msg.post("enemy", h.ENEMY_TARGET, { target = nil })
 		end
 	end
